@@ -14,9 +14,21 @@ export class InputController {
       this.onSelectionChange();
     });
 
-    this.editor.addEventListener("click", this.onSelectionChange);
+    this.editor.addEventListener("pointerup", this.onSelectionChange);
+    this.editor.addEventListener("select", this.onSelectionChange);
+    this.editor.addEventListener("keydown", () => {
+    requestAnimationFrame(this.onSelectionChange);
+    });
     this.editor.addEventListener("keyup", this.onSelectionChange);
     this.editor.addEventListener("select", this.onSelectionChange);
+    this.editor.addEventListener("focus", this.onSelectionChange);
+    this.editor.addEventListener("blur", this.onSelectionChange);
+
+    document.addEventListener("selectionchange", () => {
+        if (document.activeElement === this.editor) {
+            this.onSelectionChange();
+        }
+    });
   }
 
   private syncModel(): void {

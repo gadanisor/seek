@@ -10,7 +10,14 @@
         <header class="titlebar">
             <span>untitled.txt</span>
         </header>
-        <textarea id="editor" spellcheck="false" autofocus></textarea>
+        <div id="editor-container">
+            <div id="editor-view" aria-hidden="true"></div>
+            <textarea
+                id="editor"
+                spellcheck="false"
+                aria-label="Code editor">
+            </textarea>
+        </div>
         <footer class="statusbar">
             <span id="position">Ln 1, Col 1</span>
             <span>Plain Text</span>

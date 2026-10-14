@@ -1,11 +1,13 @@
-
 import "./style.css";
 import { TextModel } from "./editor/text-model";
+import { EditorView } from "./editor/editor-view";
 
 const editor = document.querySelector<HTMLTextAreaElement>("#editor")!;
 const position = document.querySelector<HTMLElement>("#position")!;
+const viewContainer = document.querySelector<HTMLElement>("#editor-view")!;
 
 const model = new TextModel();
+const view = new EditorView(viewContainer, model);
 
 function updatePosition(): void {
     const beforeCursor = editor.value.slice(0, editor.selectionStart);
@@ -49,6 +51,7 @@ function syncModel(): void {
 
   model.delete(start, oldEnd);
   model.insert(start, newText.slice(start, newEnd));
+  view.render();
   console.log("Seek TextModel:", model.getText());
 }
 
@@ -62,3 +65,4 @@ editor.addEventListener("keyup", updatePosition);
 editor.addEventListener("select", updatePosition);
 
 updatePosition();
+view.render();

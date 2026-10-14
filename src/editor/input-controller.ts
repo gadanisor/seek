@@ -2,32 +2,63 @@
 import { TextModel } from "./text-model";
 
 export class InputController {
+  private selectionFrame: number | null = null;
+
+  private scheduleSelectionUpdate = (): void => {
+    if (this.selectionFrame !== null) return;
+    this.selectionFrame = requestAnimationFrame(() => {
+      this.selectionFrame = null;
+      this.onSelectionChange();
+    });
+  };
+
   constructor(
     private editor: HTMLTextAreaElement,
     private model: TextModel,
     private onChange: () => void,
     private onSelectionChange: () => void
   ) {
+    
     this.editor.addEventListener("input", () => {
       this.syncModel();
       this.onChange();
-      this.onSelectionChange();
+      this.scheduleSelectionUpdate();
     });
 
-    this.editor.addEventListener("pointerup", this.onSelectionChange);
-    this.editor.addEventListener("select", this.onSelectionChange);
-    this.editor.addEventListener("keydown", () => {
-    requestAnimationFrame(this.onSelectionChange);
-    });
-    this.editor.addEventListener("keyup", this.onSelectionChange);
-    this.editor.addEventListener("select", this.onSelectionChange);
-    this.editor.addEventListener("focus", this.onSelectionChange);
-    this.editor.addEventListener("blur", this.onSelectionChange);
+    this.editor.addEventListener(
+      "pointerup",
+      this.scheduleSelectionUpdate
+    );
+
+    this.editor.addEventListener(
+      "keydown",
+      this.scheduleSelectionUpdate
+    );
+
+    this.editor.addEventListener(
+      "keyup",
+      this.scheduleSelectionUpdate
+    );
+
+    this.editor.addEventListener(
+      "select",
+      this.scheduleSelectionUpdate
+    );
+
+    this.editor.addEventListener(
+      "focus",
+      this.scheduleSelectionUpdate
+    );
+
+    this.editor.addEventListener(
+      "blur",
+      this.scheduleSelectionUpdate
+    );
 
     document.addEventListener("selectionchange", () => {
-        if (document.activeElement === this.editor) {
-            this.onSelectionChange();
-        }
+      if (document.activeElement === this.editor) {
+        this.scheduleSelectionUpdate();
+      }
     });
   }
 

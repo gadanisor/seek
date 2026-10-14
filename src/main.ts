@@ -27,7 +27,10 @@ function updatePosition(): void {
 new InputController(
   editor,
   model,
-  () => view.render(),
+  () => {
+    view.render();
+    cursor.resetBlink();
+  },
   updatePosition
 );
 

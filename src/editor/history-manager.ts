@@ -78,11 +78,20 @@ export class HistoryManager {
       current.insertedText.length === 1 &&
       !current.insertedText.includes("\n");
 
-    if (previousIsTyping && currentIsTyping) {
-      return (
-        current.start ===
-        previous.start + previous.insertedText.length
-      );
+    const previousIsReplacement =
+        previous.deletedLength > 0 &&
+        previous.insertedText.length > 0 &&
+        !previous.deletedText.includes("\n") &&
+        !previous.insertedText.includes("\n");
+
+    if (
+        (previousIsTyping || previousIsReplacement) &&
+        currentIsTyping
+    ) {
+        return (
+            current.start ===
+            previous.start + previous.insertedText.length
+        );
     }
 
     const previousIsDeleting =

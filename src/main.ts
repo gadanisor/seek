@@ -3,6 +3,7 @@ import { TextModel } from "./editor/text-model";
 import { EditorView } from "./editor/editor-view";
 import { InputController } from "./editor/input-controller";
 import { CursorView } from "./editor/cursor-view";
+import { SelectionView } from "./editor/selection-view";
 
 const editor = document.querySelector<HTMLTextAreaElement>("#editor")!;
 const position = document.querySelector<HTMLElement>("#position")!;
@@ -12,6 +13,8 @@ const model = new TextModel();
 const view = new EditorView(viewContainer, model);
 const cursorContainer = document.querySelector<HTMLElement>("#cursor-layer")!;
 const cursor = new CursorView(cursorContainer, editor);
+const selectionContainer = document.querySelector<HTMLElement>("#selection-layer")!;
+const selection = new SelectionView(selectionContainer, editor);
 
 function updatePosition(): void {
   const beforeCursor = editor.value.slice(0, editor.selectionStart);
@@ -22,6 +25,7 @@ function updatePosition(): void {
 
   position.textContent = `Ln ${line}, Col ${column}`;
   cursor.render();
+  selection.render();
 }
 
 new InputController(
@@ -38,6 +42,7 @@ editor.addEventListener("scroll", () => {
   viewContainer.scrollTop = editor.scrollTop;
   viewContainer.scrollLeft = editor.scrollLeft;
   cursor.render();
+  selection.render();
 });
 
 view.render();

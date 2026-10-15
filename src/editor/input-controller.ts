@@ -1,8 +1,9 @@
-
-import { TextModel } from "./text-model";
+import { TextModel, type TextChange } from "./text-model";
+import type { SelectionState } from "./history-manager";
 
 export class InputController {
   private selectionFrame: number | null = null;
+  private selectionBefore: SelectionState | null = null;
 
   private scheduleSelectionUpdate = (): void => {
     if (this.selectionFrame !== null) return;
@@ -16,11 +17,36 @@ export class InputController {
     private editor: HTMLTextAreaElement,
     private model: TextModel,
     private onChange: () => void,
-    private onSelectionChange: () => void
+    private onSelectionChange: () => void,
+    private onEdit: (
+      change: TextChange,
+      selectionBefore: SelectionState,
+      selectionAfter: SelectionState
+    ) => void
   ) {
+
+    this.editor.addEventListener("beforeinput", () => {
+      this.selectionBefore = {
+          start: this.editor.selectionStart,
+          end: this.editor.selectionEnd
+      };
+    });
     
     this.editor.addEventListener("input", () => {
-      this.syncModel();
+      const selectionAfter: SelectionState = {
+        start: this.editor.selectionStart,
+        end: this.editor.selectionEnd
+      };
+
+      const selectionBefore = this.selectionBefore;
+      this.selectionBefore = null;
+
+      const change = this.syncModel();
+
+      if (change && selectionBefore) {
+        this.onEdit(change, selectionBefore, selectionAfter);
+      }
+
       this.onChange();
       this.scheduleSelectionUpdate();
     });
@@ -62,11 +88,11 @@ export class InputController {
     });
   }
 
-  private syncModel(): void {
+  private syncModel(): TextChange | null {
     const newText = this.editor.value;
     const oldText = this.model.getText();
 
-    if (newText === oldText) return;
+    if (newText === oldText) return null;
 
     let start = 0;
 
@@ -90,6 +116,19 @@ export class InputController {
       newEnd--;
     }
 
-    this.model.replace(start, oldEnd, newText.slice(start, newEnd));
+    const change: TextChange = {
+      start,
+      deletedText: oldText.slice(start, oldEnd),
+      deletedLength: oldEnd - start,
+      insertedText: newText.slice(start, newEnd)
+    };
+
+    this.model.replace(
+      change.start,
+      oldEnd,
+      change.insertedText
+    );
+
+    return change;
   }
 }

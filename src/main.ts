@@ -1,11 +1,10 @@
-
 import "./style.css";
 import { TextModel } from "./editor/text-model";
 import { EditorView } from "./editor/editor-view";
 import { InputController } from "./editor/input-controller";
 import { CursorView } from "./editor/cursor-view";
 import { SelectionView } from "./editor/selection-view";
-import { HistoryManager } from "./editor/history-manager";
+import { HistoryManager, type SelectionState } from "./editor/history-manager";
 
 const editor = document.querySelector<HTMLTextAreaElement>("#editor")!;
 const position = document.querySelector<HTMLElement>("#position")!;
@@ -37,36 +36,30 @@ function updatePosition(): void {
   selection.render();
 }
 
-function syncEditorFromModel(offset: number): void {
+function syncEditorFromModel(selection: SelectionState): void {
   editor.value = model.getText();
 
-  const position = Math.min(offset, editor.value.length);
-  editor.setSelectionRange(position, position);
+  editor.setSelectionRange(
+    selection.start,
+    selection.end
+  );
 
   cursor.resetBlink();
   updatePosition();
 }
 
 function undo(): void {
-  const change = history.undo();
-  if (!change) return;
+  const entry = history.undo();
+  if (!entry) return;
 
-  // După undo, cursorul ajunge la sfârșitul
-  // textului restaurat.
-  const offset = change.start + change.deletedText.length;
-
-  syncEditorFromModel(offset);
+  syncEditorFromModel(entry.selectionBefore);
 }
 
 function redo(): void {
-  const change = history.redo();
-  if (!change) return;
+  const entry = history.redo();
+  if (!entry) return;
 
-  // După redo, cursorul ajunge la sfârșitul
-  // textului inserat.
-  const offset = change.start + change.insertedText.length;
-
-  syncEditorFromModel(offset);
+  syncEditorFromModel(entry.selectionAfter);
 }
 
 new InputController(
@@ -75,7 +68,14 @@ new InputController(
   () => {
     cursor.resetBlink();
   },
-  updatePosition
+  updatePosition,
+  (change, selectionBefore, selectionAfter) => {
+    history.record(
+      change,
+      selectionBefore,
+      selectionAfter
+    );
+  }
 );
 
 editor.addEventListener("scroll", () => {

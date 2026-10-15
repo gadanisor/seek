@@ -5,6 +5,7 @@ import { InputController } from "./editor/input-controller";
 import { CursorView } from "./editor/cursor-view";
 import { SelectionView } from "./editor/selection-view";
 import { HistoryManager, type SelectionState } from "./editor/history-manager";
+import { LineNumberView } from "./editor/line-number-view";
 
 const editor = document.querySelector<HTMLTextAreaElement>("#editor")!;
 const position = document.querySelector<HTMLElement>("#position")!;
@@ -14,8 +15,18 @@ const model = new TextModel();
 const view = new EditorView(viewContainer, model);
 const history = new HistoryManager(model);
 
+const lineNumberContainer =
+  document.querySelector<HTMLElement>("#line-number-layer")!;
+
+const lineNumbers = new LineNumberView(
+  lineNumberContainer,
+  model,
+  editor
+);
+
 model.onChange((change) => {
   view.applyChange(change);
+  lineNumbers.render();
 });
 
 const cursorContainer = document.querySelector<HTMLElement>("#cursor-layer")!;
@@ -82,6 +93,7 @@ editor.addEventListener("scroll", () => {
   viewContainer.scrollTop = editor.scrollTop;
   viewContainer.scrollLeft = editor.scrollLeft;
   cursor.render();
+  lineNumbers.syncScroll();
   selection.render();
 });
 
@@ -109,4 +121,5 @@ editor.addEventListener("keydown", (event) => {
 });
 
 view.render();
+lineNumbers.render();
 updatePosition();

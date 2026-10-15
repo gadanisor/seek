@@ -7,10 +7,23 @@ export class EditorView {
 
   private lines: string[] = [];
   private elements: HTMLDivElement[] = [];
+  private activeLineIndex = 0;
 
   constructor(container: HTMLElement, model: TextModel) {
     this.container = container;
     this.model = model;
+  }
+
+  setActiveLine(index: number): void {
+    if (index === this.activeLineIndex) return;
+
+    this.elements[this.activeLineIndex]
+      ?.classList.remove("active-line");
+
+    this.activeLineIndex = index;
+
+    this.elements[this.activeLineIndex]
+      ?.classList.add("active-line");
   }
 
   render(): void {
@@ -29,6 +42,8 @@ export class EditorView {
     }
 
     this.container.replaceChildren(fragment);
+    this.elements[this.activeLineIndex]
+      ?.classList.add("active-line");
   }
 
   applyChange(change: TextChange): void {
@@ -122,6 +137,13 @@ export class EditorView {
         ...addedElements
       );
     }
+
+    this.elements.forEach((element, index) => {
+      element.classList.toggle(
+        "active-line",
+        index === this.activeLineIndex
+      );
+    });
   }
 
   private createLine(text: string): HTMLDivElement {

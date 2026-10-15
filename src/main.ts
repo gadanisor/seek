@@ -41,6 +41,8 @@ function updatePosition(): void {
 
   const line = lines.length;
   const column = lines[lines.length - 1].length + 1;
+  view.setActiveLine(line - 1);
+  lineNumbers.setActiveLine(line - 1);
 
   position.textContent = `Ln ${line}, Col ${column}`;
   cursor.render();

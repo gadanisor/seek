@@ -80,6 +80,10 @@ body {
   height: var(--editor-line-height);
 }
 
+.editor-line.active-line {
+  background: rgba(255, 255, 255, 0.045);
+}
+
 /* Input layer — temporary */
 
 #editor {
@@ -191,4 +195,8 @@ body {
   height: var(--editor-line-height);
   line-height: var(--editor-line-height);
   user-select: none;
+}
+
+.line-number.active-line-number {
+  color: #ddd;
 }

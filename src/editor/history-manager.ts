@@ -16,17 +16,26 @@ export class HistoryManager {
 
       const now = Date.now();
       const previous = this.undoStack.at(-1);
-
-      if (
+      
+        if (
         previous &&
         this.canMerge(previous, change, now)
-      ) {
-        // Extindem ultima inserare în loc să
-        // creăm o intrare nouă în istoric.
-        previous.insertedText += change.insertedText;
-      } else {
+        ) {
+        if (change.insertedText) {
+            // Tastare: adăugăm caracterele la final.
+            previous.insertedText += change.insertedText;
+        } else {
+            // Backspace: caracterele șterse vin în față.
+            previous.start = change.start;
+            previous.deletedText =
+            change.deletedText + previous.deletedText;
+
+            previous.deletedLength =
+            previous.deletedText.length;
+        }
+        } else {
         this.undoStack.push({ ...change });
-      }
+        }
 
       this.redoStack = [];
       this.lastEditTime = now;
@@ -41,6 +50,9 @@ export class HistoryManager {
     const withinTime =
       now - this.lastEditTime < this.mergeDelay;
 
+    if (!withinTime) return false;
+
+    // Grupăm caracterele tastate consecutiv.
     const previousIsTyping =
       previous.deletedLength === 0 &&
       previous.insertedText.length > 0 &&
@@ -51,17 +63,33 @@ export class HistoryManager {
       current.insertedText.length === 1 &&
       !current.insertedText.includes("\n");
 
-    const isAdjacent =
-      current.start ===
-      previous.start + previous.insertedText.length;
+    if (previousIsTyping && currentIsTyping) {
+      return (
+        current.start ===
+        previous.start + previous.insertedText.length
+      );
+    }
 
-    return (
-      withinTime &&
-      previousIsTyping &&
-      currentIsTyping &&
-      isAdjacent
-    );
-  }
+    // Grupăm ștergerile consecutive cu Backspace.
+    const previousIsDeleting =
+      previous.insertedText === "" &&
+      previous.deletedLength > 0 &&
+      !previous.deletedText.includes("\n");
+
+    const currentIsDeleting =
+      current.insertedText === "" &&
+      current.deletedLength === 1 &&
+      !current.deletedText.includes("\n");
+
+    if (previousIsDeleting && currentIsDeleting) {
+      return (
+        current.start + current.deletedLength ===
+        previous.start
+      );
+    }
+
+    return false;
+}
 
   undo(): TextChange | null {
     const change = this.undoStack.pop();

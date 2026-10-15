@@ -1,3 +1,5 @@
+import "./editor/themes/dark.css";
+import "./editor/themes/light.css";
 import "./style.css";
 import { TextModel } from "./editor/text-model";
 import { EditorView } from "./editor/editor-view";

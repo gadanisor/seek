@@ -34,7 +34,8 @@ body {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: #121314;
+  background: var(--seek-background);
+  color-scheme: var(--seek-color-scheme);
 }
 
 /* Shared editor geometry */
@@ -60,7 +61,7 @@ body {
 
 #editor-view {
   overflow: auto;
-  color: #ddd;
+  color: var(--seek-foreground);
   white-space: pre;
   pointer-events: none;
 }
@@ -70,7 +71,7 @@ body {
 }
 
 .editor-line.active-line {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--seek-active-line-background);
 }
 
 /* Input layer — temporary */
@@ -96,6 +97,8 @@ body {
   background: transparent;
 }
 
+/* Cursor layer */
+
 #cursor-layer {
   position: absolute;
   inset: 0;
@@ -109,7 +112,7 @@ body {
   left: 0;
 
   width: 2px;
-  background: #ddd;
+  background: var(--seek-cursor-color);
 
   pointer-events: none;
   animation: cursor-blink 1s step-end infinite;
@@ -124,6 +127,8 @@ body {
     opacity: 0;
   }
 }
+
+/* Selection layer */
 
 #selection-layer {
   position: absolute;
@@ -142,9 +147,11 @@ body {
 }
 
 .editor-selection-path {
-  fill: rgba(100, 140, 220, 0.35);
+  fill: var(--seek-selection-background);
   stroke: none;
 }
+
+/* Line numbers */
 
 #line-number-layer {
   position: absolute;
@@ -160,7 +167,7 @@ body {
   font-size: 14px;
   line-height: var(--editor-line-height);
 
-  color: #666;
+  color: var(--seek-line-number-color);
   text-align: right;
 
   pointer-events: none;
@@ -174,5 +181,5 @@ body {
 }
 
 .line-number.active-line-number {
-  color: #ddd;
+  color: var(--seek-line-number-active-color);
 }

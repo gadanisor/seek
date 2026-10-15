@@ -1,0 +1,13 @@
+.seek-theme-light {
+  --seek-color-scheme: light;
+  --seek-background: #ffffff;
+  --seek-foreground: #24292f;
+
+  --seek-cursor-color: #24292f;
+
+  --seek-line-number-color: #999999;
+  --seek-line-number-active-color: #24292f;
+
+  --seek-active-line-background: rgba(0, 0, 0, 0.045);
+  --seek-selection-background: rgba(100, 140, 220, 0.25);
+}

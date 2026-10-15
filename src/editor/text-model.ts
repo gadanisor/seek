@@ -1,38 +1,68 @@
-// src/editor/text-model.ts
+
+export type TextChange = {
+  start: number;
+  deletedLength: number;
+  insertedText: string;
+};
+
+export type TextChangeListener = (change: TextChange) => void;
 
 export class TextModel {
-  private content: string;
+  private text: string;
+  private listeners = new Set<TextChangeListener>();
 
-  constructor(content: string = "") {
-    this.content = content;
+  constructor(text = "") {
+    this.text = text;
   }
 
   getText(): string {
-    return this.content;
-  }
-
-  insert(offset: number, text: string): void {
-    if (offset < 0 || offset > this.content.length) {
-      throw new RangeError("Invalid insertion offset");
-    }
-
-    this.content =
-      this.content.slice(0, offset) +
-      text +
-      this.content.slice(offset);
-  }
-
-  delete(start: number, end: number): void {
-    if (start < 0 || end < start || end > this.content.length) {
-      throw new RangeError("Invalid deletion range");
-    }
-
-    this.content =
-      this.content.slice(0, start) +
-      this.content.slice(end);
+    return this.text;
   }
 
   getLength(): number {
-    return this.content.length;
+    return this.text.length;
+  }
+
+  insert(offset: number, text: string): void {
+    if (!text) return;
+
+    this.text =
+      this.text.slice(0, offset) +
+      text +
+      this.text.slice(offset);
+
+    this.emit({
+      start: offset,
+      deletedLength: 0,
+      insertedText: text
+    });
+  }
+
+  delete(start: number, end: number): void {
+    if (start === end) return;
+
+    this.text =
+      this.text.slice(0, start) +
+      this.text.slice(end);
+
+    this.emit({
+      start,
+      deletedLength: end - start,
+      insertedText: ""
+    });
+  }
+
+  onChange(listener: TextChangeListener): () => void {
+    this.listeners.add(listener);
+
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private emit(change: TextChange): void {
+    for (const listener of this.listeners) {
+      listener(change);
+    }
   }
 }

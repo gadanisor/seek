@@ -1,5 +1,5 @@
 
-import { TextModel } from "./text-model";
+import { TextModel, type TextChange } from "./text-model";
 
 export class EditorView {
   private container: HTMLElement;
@@ -14,100 +14,114 @@ export class EditorView {
   }
 
   render(): void {
-    const nextLines = this.model.getText().split("\n");
+    const text = this.model.getText();
 
-    // Prima randare.
-    if (this.elements.length === 0) {
-      const fragment = document.createDocumentFragment();
+    this.lines = text.split("\n");
+    this.elements = [];
 
-      for (const line of nextLines) {
-        const element = this.createLine(line);
+    const fragment = document.createDocumentFragment();
 
-        this.elements.push(element);
-        fragment.appendChild(element);
+    for (const line of this.lines) {
+      const element = this.createLine(line);
+
+      this.elements.push(element);
+      fragment.appendChild(element);
+    }
+
+    this.container.replaceChildren(fragment);
+  }
+
+  applyChange(change: TextChange): void {
+    // Calculăm linia și coloana de unde începe modificarea.
+    let lineIndex = 0;
+    let lineStartOffset = 0;
+
+    for (let i = 0; i < this.lines.length; i++) {
+      const lineEndOffset =
+        lineStartOffset + this.lines[i].length;
+
+      if (change.start <= lineEndOffset) {
+        lineIndex = i;
+        break;
       }
 
-      this.container.appendChild(fragment);
-      this.lines = nextLines;
-      return;
+      lineStartOffset = lineEndOffset + 1;
     }
 
-    // Căutăm liniile identice de la început.
-    let start = 0;
+    const column = change.start - lineStartOffset;
+
+    // Pentru ștergere, aflăm unde se termina textul eliminat.
+    const deleteEnd = change.start + change.deletedLength;
+
+    let endLineIndex = lineIndex;
+    let endLineStartOffset = lineStartOffset;
 
     while (
-      start < this.lines.length &&
-      start < nextLines.length &&
-      this.lines[start] === nextLines[start]
+      endLineIndex < this.lines.length - 1 &&
+      deleteEnd >
+        endLineStartOffset + this.lines[endLineIndex].length
     ) {
-      start++;
+      endLineStartOffset +=
+        this.lines[endLineIndex].length + 1;
+
+      endLineIndex++;
     }
 
-    // Căutăm liniile identice de la sfârșit.
-    let oldEnd = this.lines.length;
-    let newEnd = nextLines.length;
+    const endColumn = deleteEnd - endLineStartOffset;
 
-    while (
-      oldEnd > start &&
-      newEnd > start &&
-      this.lines[oldEnd - 1] === nextLines[newEnd - 1]
-    ) {
-      oldEnd--;
-      newEnd--;
+    const firstLine = this.lines[lineIndex];
+    const lastLine = this.lines[endLineIndex];
+
+    const before = firstLine.slice(0, column);
+    const after = lastLine.slice(endColumn);
+
+    const replacement = (
+      before + change.insertedText + after
+    ).split("\n");
+
+    const removedCount = endLineIndex - lineIndex + 1;
+
+    // Actualizăm modelul local al liniilor.
+    this.lines.splice(
+      lineIndex,
+      removedCount,
+      ...replacement
+    );
+
+    // Refolosim elementul primei linii.
+    const firstElement = this.elements[lineIndex];
+    firstElement.textContent = replacement[0];
+
+    // Eliminăm liniile vechi suplimentare.
+    const removedElements = this.elements.splice(
+      lineIndex + 1,
+      removedCount - 1
+    );
+
+    for (const element of removedElements) {
+      element.remove();
     }
 
-    // Liniile modificate.
-    const oldCount = oldEnd - start;
-    const newCount = newEnd - start;
-
-    // Actualizăm elementele pe care le putem reutiliza.
-    const reusedCount = Math.min(oldCount, newCount);
-
-    for (let i = 0; i < reusedCount; i++) {
-      const index = start + i;
-      this.elements[index].textContent = nextLines[index];
-    }
-
-    // Dacă au apărut linii noi, le inserăm.
-    if (newCount > oldCount) {
+    // Inserăm liniile noi suplimentare.
+    if (replacement.length > 1) {
       const fragment = document.createDocumentFragment();
       const addedElements: HTMLDivElement[] = [];
 
-      for (let i = start + reusedCount; i < newEnd; i++) {
-        const element = this.createLine(nextLines[i]);
+      for (let i = 1; i < replacement.length; i++) {
+        const element = this.createLine(replacement[i]);
 
         addedElements.push(element);
         fragment.appendChild(element);
       }
 
-      const reference =
-        this.elements[start + reusedCount] ?? null;
-
-      this.container.insertBefore(fragment, reference);
+      firstElement.after(fragment);
 
       this.elements.splice(
-        start + reusedCount,
+        lineIndex + 1,
         0,
         ...addedElements
       );
     }
-
-    // Dacă au dispărut linii, le eliminăm.
-    if (oldCount > newCount) {
-      const removeStart = start + reusedCount;
-      const removeCount = oldCount - newCount;
-
-      const removed = this.elements.splice(
-        removeStart,
-        removeCount
-      );
-
-      for (const element of removed) {
-        element.remove();
-      }
-    }
-
-    this.lines = nextLines;
   }
 
   private createLine(text: string): HTMLDivElement {

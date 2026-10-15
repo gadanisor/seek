@@ -1,3 +1,4 @@
+
 import "./style.css";
 import { TextModel } from "./editor/text-model";
 import { EditorView } from "./editor/editor-view";
@@ -11,8 +12,14 @@ const viewContainer = document.querySelector<HTMLElement>("#editor-view")!;
 
 const model = new TextModel();
 const view = new EditorView(viewContainer, model);
+
+model.onChange((change) => {
+  view.applyChange(change);
+});
+
 const cursorContainer = document.querySelector<HTMLElement>("#cursor-layer")!;
 const cursor = new CursorView(cursorContainer, editor);
+
 const selectionContainer = document.querySelector<HTMLElement>("#selection-layer")!;
 const selection = new SelectionView(selectionContainer, editor);
 
@@ -32,7 +39,6 @@ new InputController(
   editor,
   model,
   () => {
-    view.render();
     cursor.resetBlink();
   },
   updatePosition

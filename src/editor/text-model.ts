@@ -1,6 +1,6 @@
-
 export type TextChange = {
   start: number;
+  deletedText: string;
   deletedLength: number;
   insertedText: string;
 };
@@ -33,6 +33,7 @@ export class TextModel {
 
   replace(start: number, end: number, text: string): void {
     if (start === end && text === "") return;
+    const deletedText = this.text.slice(start, end);
 
     this.text =
       this.text.slice(0, start) +
@@ -41,7 +42,8 @@ export class TextModel {
 
     this.emit({
       start,
-      deletedLength: end - start,
+      deletedText,
+      deletedLength: deletedText.length,
       insertedText: text
     });
   }

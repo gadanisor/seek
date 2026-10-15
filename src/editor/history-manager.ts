@@ -11,7 +11,6 @@ export type HistoryEntry = {
   selectionAfter: SelectionState;
 };
 
-
 export class HistoryManager {
   private undoStack: HistoryEntry[] = [];
   private redoStack: HistoryEntry[] = [];

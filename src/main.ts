@@ -8,7 +8,6 @@ import { HistoryManager, type SelectionState } from "./editor/history-manager";
 import { LineNumberView } from "./editor/line-number-view";
 
 const editor = document.querySelector<HTMLTextAreaElement>("#editor")!;
-const position = document.querySelector<HTMLElement>("#position")!;
 const viewContainer = document.querySelector<HTMLElement>("#editor-view")!;
 
 const model = new TextModel();
@@ -37,14 +36,11 @@ const selection = new SelectionView(selectionContainer, editor);
 
 function updatePosition(): void {
   const beforeCursor = editor.value.slice(0, editor.selectionStart);
-  const lines = beforeCursor.split("\n");
+  const line = beforeCursor.split("\n").length;
 
-  const line = lines.length;
-  const column = lines[lines.length - 1].length + 1;
   view.setActiveLine(line - 1);
   lineNumbers.setActiveLine(line - 1);
 
-  position.textContent = `Ln ${line}, Col ${column}`;
   cursor.render();
   selection.render();
 }

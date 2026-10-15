@@ -24,31 +24,25 @@ export class TextModel {
   }
 
   insert(offset: number, text: string): void {
-    if (!text) return;
-
-    this.text =
-      this.text.slice(0, offset) +
-      text +
-      this.text.slice(offset);
-
-    this.emit({
-      start: offset,
-      deletedLength: 0,
-      insertedText: text
-    });
+    this.replace(offset, offset, text);
   }
 
   delete(start: number, end: number): void {
-    if (start === end) return;
+    this.replace(start, end, "");
+  }
+
+  replace(start: number, end: number, text: string): void {
+    if (start === end && text === "") return;
 
     this.text =
       this.text.slice(0, start) +
+      text +
       this.text.slice(end);
 
     this.emit({
       start,
       deletedLength: end - start,
-      insertedText: ""
+      insertedText: text
     });
   }
 

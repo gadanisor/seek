@@ -90,7 +90,6 @@ export class InputController {
       newEnd--;
     }
 
-    this.model.delete(start, oldEnd);
-    this.model.insert(start, newText.slice(start, newEnd));
+    this.model.replace(start, oldEnd, newText.slice(start, newEnd));
   }
 }

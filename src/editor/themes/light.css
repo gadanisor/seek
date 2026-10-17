@@ -13,4 +13,17 @@
 
   --seek-active-line-background: rgba(0, 0, 0, 0.045);
   --seek-selection-background: rgba(100, 140, 220, 0.25);
+
+  --seek-search-match-background: rgba(234, 192, 0, 0.3);
+  --seek-search-match-border: rgba(160, 120, 0, 0.65);
+  --seek-search-active-background: rgba(249, 168, 37, 0.5);
+  --seek-search-active-border: #c47f00;
+  --seek-find-background: #f3f3f3;
+  --seek-find-foreground: #333333;
+  --seek-find-secondary-foreground: #666666;
+  --seek-find-border: #cccccc;
+  --seek-find-input-background: #ffffff;
+  --seek-find-input-border: #cecece;
+  --seek-find-focus-border: #007acc;
+  --seek-find-button-hover-background: rgba(0, 0, 0, 0.08);
 }

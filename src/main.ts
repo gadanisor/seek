@@ -9,6 +9,9 @@ import { SelectionView } from "./editor/selection-view";
 import { ScrollbarView } from "./editor/scrollbar-view";
 import { HistoryManager, type SelectionState } from "./editor/history-manager";
 import { LineNumberView } from "./editor/line-number-view";
+import { SearchController } from "./editor/search-controller";
+import { SearchDecorationView } from "./editor/search-decoration-view";
+import { FindWidget } from "./editor/find-widget";
 
 const editor = document.querySelector<HTMLTextAreaElement>("#editor")!;
 const viewContainer = document.querySelector<HTMLElement>("#editor-view")!;
@@ -82,6 +85,7 @@ const scrollbar = new ScrollbarView(
 const resizeObserver = new ResizeObserver(() => {
   updateScrollBeyondLastLine();
   requestAnimationFrame(() => {
+    searchDecorations.render();
     scrollbar.render();
   });
 });
@@ -110,6 +114,7 @@ function syncEditorFromModel(selection: SelectionState): void {
 
   cursor.resetBlink();
   updatePosition();
+  searchDecorations.render();
 }
 
 function undo(): void {
@@ -142,12 +147,99 @@ new InputController(
   }
 );
 
+const search = new SearchController(model, history);
+const searchDecorations = new SearchDecorationView(editorContainer, editor);
+
+function revealSearchMatch(): void {
+  const match = search.getActiveMatch();
+  if (!match) return;
+
+  const style = getComputedStyle(editor);
+  const lineHeight = parseFloat(style.lineHeight);
+  const paddingLeft = parseFloat(style.paddingLeft);
+  const paddingTop = parseFloat(style.paddingTop);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  if (!context) return;
+
+  context.font = style.font;
+  const charWidth = context.measureText("M").width;
+  const beforeMatch = model.getText().slice(0, match.start);
+  const line = beforeMatch.split("\n").length - 1;
+  const column = match.start - (beforeMatch.lastIndexOf("\n") + 1);
+  const matchLineLength = Math.max(
+    1,
+    model.getText().slice(match.start, match.end).split("\n", 1)[0].length
+  );
+  const left = paddingLeft + column * charWidth;
+  const right = left + matchLineLength * charWidth;
+  const top = paddingTop + line * lineHeight;
+  const bottom = top + lineHeight;
+
+  const availableWidth = editor.clientWidth - paddingLeft - 20;
+
+  if (
+    left < editor.scrollLeft + paddingLeft ||
+    right - left > availableWidth
+  ) {
+    editor.scrollLeft = left - paddingLeft;
+  } else if (right > editor.scrollLeft + editor.clientWidth - 20) {
+    editor.scrollLeft = right - editor.clientWidth + 20;
+  }
+
+  if (top < editor.scrollTop) {
+    editor.scrollTop = top;
+  } else if (bottom > editor.scrollTop + editor.clientHeight) {
+    editor.scrollTop = bottom - editor.clientHeight;
+  }
+
+  searchDecorations.render();
+  scrollbar.render();
+}
+
+function currentSelection(): SelectionState {
+  return {
+    start: editor.selectionStart,
+    end: editor.selectionEnd
+  };
+}
+
+function closeFindWidget(): void {
+  findWidget.close();
+  searchDecorations.setVisible(false);
+  editor.focus();
+  updatePosition();
+}
+
+const findWidget = new FindWidget(editorContainer, search, {
+  open: () => searchDecorations.setVisible(true),
+  revealActive: revealSearchMatch,
+  replaceCurrent: (replacement) => {
+    const selection = search.replaceCurrent(replacement, currentSelection());
+    if (!selection) return;
+    syncEditorFromModel(selection);
+    revealSearchMatch();
+  },
+  replaceAll: (replacement) => {
+    const selection = search.replaceAll(replacement, currentSelection());
+    if (!selection) return;
+    syncEditorFromModel(selection);
+    revealSearchMatch();
+  },
+  close: closeFindWidget
+});
+
+search.onChange((state) => {
+  searchDecorations.setState(state);
+});
+
 editor.addEventListener("scroll", () => {
   viewContainer.scrollTop = editor.scrollTop;
   viewContainer.scrollLeft = editor.scrollLeft;
   cursor.render();
   lineNumbers.syncScroll();
   selection.render();
+  searchDecorations.render();
   scrollbar.render();
 });
 
@@ -157,6 +249,16 @@ editor.addEventListener("keydown", (event) => {
   if (!modifier) return;
 
   const key = event.key.toLowerCase();
+
+  if (key === "f" || key === "h") {
+    event.preventDefault();
+    const selectedText = editor.value.slice(
+      editor.selectionStart,
+      editor.selectionEnd
+    );
+    findWidget.open(key === "h", selectedText.includes("\n") ? undefined : selectedText);
+    return;
+  }
 
   if (key === "z") {
     event.preventDefault();

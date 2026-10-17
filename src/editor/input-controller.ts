@@ -2,6 +2,7 @@ import { TextModel, type TextChange } from "./text-model";
 import type { SelectionState } from "./history-manager";
 
 export class InputController {
+  private abortController = new AbortController();
   private selectionFrame: number | null = null;
   private selectionBefore: SelectionState | null = null;
 
@@ -24,13 +25,14 @@ export class InputController {
       selectionAfter: SelectionState
     ) => void
   ) {
+    const eventOptions = { signal: this.abortController.signal };
 
     this.editor.addEventListener("beforeinput", () => {
       this.selectionBefore = {
           start: this.editor.selectionStart,
           end: this.editor.selectionEnd
       };
-    });
+    }, eventOptions);
     
     this.editor.addEventListener("input", () => {
       const selectionAfter: SelectionState = {
@@ -49,43 +51,57 @@ export class InputController {
 
       this.onChange();
       this.scheduleSelectionUpdate();
-    });
+    }, eventOptions);
 
     this.editor.addEventListener(
       "pointerup",
-      this.scheduleSelectionUpdate
+      this.scheduleSelectionUpdate,
+      eventOptions
     );
 
     this.editor.addEventListener(
       "keydown",
-      this.scheduleSelectionUpdate
+      this.scheduleSelectionUpdate,
+      eventOptions
     );
 
     this.editor.addEventListener(
       "keyup",
-      this.scheduleSelectionUpdate
+      this.scheduleSelectionUpdate,
+      eventOptions
     );
 
     this.editor.addEventListener(
       "select",
-      this.scheduleSelectionUpdate
+      this.scheduleSelectionUpdate,
+      eventOptions
     );
 
     this.editor.addEventListener(
       "focus",
-      this.scheduleSelectionUpdate
+      this.scheduleSelectionUpdate,
+      eventOptions
     );
 
     this.editor.addEventListener(
       "blur",
-      this.scheduleSelectionUpdate
+      this.scheduleSelectionUpdate,
+      eventOptions
     );
 
     document.addEventListener("selectionchange", () => {
       if (document.activeElement === this.editor) {
         this.scheduleSelectionUpdate();
       }
-    });
+    }, eventOptions);
+  }
+
+  dispose(): void {
+    this.abortController.abort();
+    if (this.selectionFrame !== null) {
+      cancelAnimationFrame(this.selectionFrame);
+      this.selectionFrame = null;
+    }
   }
 
   private syncModel(): TextChange | null {

@@ -152,5 +152,10 @@ export class HistoryManager {
   canRedo(): boolean {
     return this.redoStack.length > 0;
   }
-}
 
+  clear(): void {
+    this.undoStack = [];
+    this.redoStack = [];
+    this.lastEditTime = 0;
+  }
+}

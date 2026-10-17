@@ -6,6 +6,7 @@ type ScrollbarParts = {
 };
 
 export class ScrollbarView {
+  private abortController = new AbortController();
   private readonly scrollbars: Record<ScrollAxis, ScrollbarParts>;
 
   constructor(
@@ -43,6 +44,7 @@ export class ScrollbarView {
   }
 
   private createScrollbar(axis: ScrollAxis): ScrollbarParts {
+    const eventOptions = { signal: this.abortController.signal };
     const track = document.createElement("div");
     track.className = `editor-scrollbar-track editor-scrollbar-track-${axis}`;
 
@@ -62,7 +64,7 @@ export class ScrollbarView {
       dragStartPointer = this.pointerPosition(axis, event);
       dragStartScroll = this.scrollPosition(axis);
       thumb.setPointerCapture(event.pointerId);
-    });
+    }, eventOptions);
 
     thumb.addEventListener("pointermove", (event) => {
       if (!dragging) return;
@@ -79,15 +81,15 @@ export class ScrollbarView {
         dragStartScroll + (delta / maxThumbTravel) * maxScroll
       );
       this.render();
-    });
+    }, eventOptions);
 
     const stopDragging = (): void => {
       dragging = false;
     };
 
-    thumb.addEventListener("pointerup", stopDragging);
-    thumb.addEventListener("pointercancel", stopDragging);
-    thumb.addEventListener("lostpointercapture", stopDragging);
+    thumb.addEventListener("pointerup", stopDragging, eventOptions);
+    thumb.addEventListener("pointercancel", stopDragging, eventOptions);
+    thumb.addEventListener("lostpointercapture", stopDragging, eventOptions);
 
     track.addEventListener("pointerdown", (event) => {
       if (event.target === thumb) return;
@@ -114,9 +116,13 @@ export class ScrollbarView {
         (targetThumbPosition / maxThumbTravel) * maxScroll
       );
       this.render();
-    });
+    }, eventOptions);
 
     return { track, thumb };
+  }
+
+  dispose(): void {
+    this.abortController.abort();
   }
 
   private renderAxis(axis: ScrollAxis, visible: boolean): void {

@@ -21,15 +21,21 @@ export class SearchController {
   private matches: SearchMatch[] = [];
   private activeIndex = -1;
   private listeners = new Set<SearchListener>();
+  private unsubscribeModel: () => void;
 
   constructor(
     private model: TextModel,
     private history: HistoryManager
   ) {
-    this.model.onChange(() => {
+    this.unsubscribeModel = this.model.onChange(() => {
       const activeStart = this.getActiveMatch()?.start ?? 0;
       this.recalculate(activeStart);
     });
+  }
+
+  dispose(): void {
+    this.unsubscribeModel();
+    this.listeners.clear();
   }
 
   getState(): SearchState {

@@ -9,6 +9,7 @@ type FindWidgetCallbacks = {
 };
 
 export class FindWidget {
+  private abortController = new AbortController();
   private element: HTMLDivElement;
   private findInput: HTMLInputElement;
   private replaceInput: HTMLInputElement;
@@ -16,12 +17,14 @@ export class FindWidget {
   private count: HTMLSpanElement;
   private caseButton: HTMLButtonElement;
   private replaceVisible = false;
+  private unsubscribeSearch: () => void;
 
   constructor(
     parent: HTMLElement,
     private search: SearchController,
     private callbacks: FindWidgetCallbacks
   ) {
+    const eventOptions = { signal: this.abortController.signal };
     this.element = document.createElement("div");
     this.element.className = "find-widget";
     this.element.hidden = true;
@@ -49,28 +52,38 @@ export class FindWidget {
     this.count = this.query<HTMLSpanElement>(".find-widget-count");
     this.caseButton = this.query<HTMLButtonElement>(".case-toggle");
 
-    this.query<HTMLButtonElement>(".find-widget-toggle").onclick = () => {
+    this.query<HTMLButtonElement>(".find-widget-toggle").addEventListener("click", () => {
       this.setReplaceVisible(!this.replaceVisible);
-    };
-    this.query<HTMLButtonElement>(".previous-match").onclick = () => this.navigate(-1);
-    this.query<HTMLButtonElement>(".next-match").onclick = () => this.navigate(1);
-    this.query<HTMLButtonElement>(".close-find").onclick = this.callbacks.close;
-    this.query<HTMLButtonElement>(".replace-current").onclick = () => {
+    }, eventOptions);
+    this.query<HTMLButtonElement>(".previous-match").addEventListener(
+      "click", () => this.navigate(-1), eventOptions
+    );
+    this.query<HTMLButtonElement>(".next-match").addEventListener(
+      "click", () => this.navigate(1), eventOptions
+    );
+    this.query<HTMLButtonElement>(".close-find").addEventListener(
+      "click", this.callbacks.close, eventOptions
+    );
+    this.query<HTMLButtonElement>(".replace-current").addEventListener("click", () => {
       this.callbacks.replaceCurrent(this.replaceInput.value);
-    };
-    this.query<HTMLButtonElement>(".replace-all").onclick = () => {
+    }, eventOptions);
+    this.query<HTMLButtonElement>(".replace-all").addEventListener("click", () => {
       this.callbacks.replaceAll(this.replaceInput.value);
-    };
-    this.caseButton.onclick = () => {
+    }, eventOptions);
+    this.caseButton.addEventListener("click", () => {
       this.search.setCaseSensitive(!this.search.getState().caseSensitive);
       this.callbacks.revealActive();
-    };
+    }, eventOptions);
     this.findInput.addEventListener("input", () => {
       this.search.setQuery(this.findInput.value);
       this.callbacks.revealActive();
-    });
-    this.element.addEventListener("keydown", (event) => this.onKeyDown(event));
-    this.search.onChange((state) => this.update(state));
+    }, eventOptions);
+    this.element.addEventListener(
+      "keydown",
+      (event) => this.onKeyDown(event),
+      eventOptions
+    );
+    this.unsubscribeSearch = this.search.onChange((state) => this.update(state));
     this.setReplaceVisible(false);
   }
 
@@ -89,6 +102,12 @@ export class FindWidget {
 
   close(): void {
     this.element.hidden = true;
+  }
+
+  dispose(): void {
+    this.abortController.abort();
+    this.unsubscribeSearch();
+    this.element.remove();
   }
 
   private navigate(direction: 1 | -1): void {

@@ -4,6 +4,9 @@
   --seek-foreground: #ddd;
 
   --seek-cursor-color: #ddd;
+  --seek-scrollbar-track: transparent;
+  --seek-scrollbar-thumb: rgba(121, 121, 121, 0.4);
+  --seek-scrollbar-thumb-hover: rgba(121, 121, 121, 0.7);
 
   --seek-line-number-color: #666;
   --seek-line-number-active-color: #ddd;

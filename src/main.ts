@@ -6,11 +6,43 @@ import { EditorView } from "./editor/editor-view";
 import { InputController } from "./editor/input-controller";
 import { CursorView } from "./editor/cursor-view";
 import { SelectionView } from "./editor/selection-view";
+import { ScrollbarView } from "./editor/scrollbar-view";
 import { HistoryManager, type SelectionState } from "./editor/history-manager";
 import { LineNumberView } from "./editor/line-number-view";
 
 const editor = document.querySelector<HTMLTextAreaElement>("#editor")!;
 const viewContainer = document.querySelector<HTMLElement>("#editor-view")!;
+const editorContainer = document.querySelector<HTMLElement>("#editor-container")!;
+
+// Kept internal until editor options are introduced.
+const scrollBeyondLastLine = true;
+
+function updateScrollBeyondLastLine(): void {
+  if (!scrollBeyondLastLine) {
+    editorContainer.style.setProperty("--editor-padding-bottom", "0px");
+    return;
+  }
+
+  const style = getComputedStyle(editor);
+  const lineHeight = parseFloat(style.lineHeight);
+  const paddingTop = parseFloat(style.paddingTop);
+
+  if (!Number.isFinite(lineHeight) || !Number.isFinite(paddingTop)) {
+    return;
+  }
+
+  // Padding is part of scrollHeight. This leaves one complete line in the
+  // viewport when the final line has been scrolled to the top content inset.
+  const paddingBottom = Math.max(
+    0,
+    editor.clientHeight - lineHeight - paddingTop
+  );
+
+  editorContainer.style.setProperty(
+    "--editor-padding-bottom",
+    `${paddingBottom}px`
+  );
+}
 
 const model = new TextModel();
 const view = new EditorView(viewContainer, model);
@@ -28,6 +60,9 @@ const lineNumbers = new LineNumberView(
 model.onChange((change) => {
   view.applyChange(change);
   lineNumbers.render();
+  requestAnimationFrame(() => {
+    scrollbar.render();
+  });
 });
 
 const cursorContainer = document.querySelector<HTMLElement>("#cursor-layer")!;
@@ -35,6 +70,23 @@ const cursor = new CursorView(cursorContainer, editor);
 
 const selectionContainer = document.querySelector<HTMLElement>("#selection-layer")!;
 const selection = new SelectionView(selectionContainer, editor);
+
+const scrollbarContainer =
+  document.querySelector<HTMLElement>("#scrollbar-layer")!;
+
+const scrollbar = new ScrollbarView(
+  scrollbarContainer,
+  editor
+);
+
+const resizeObserver = new ResizeObserver(() => {
+  updateScrollBeyondLastLine();
+  requestAnimationFrame(() => {
+    scrollbar.render();
+  });
+});
+
+resizeObserver.observe(editor);
 
 function updatePosition(): void {
   const beforeCursor = editor.value.slice(0, editor.selectionStart);
@@ -45,6 +97,7 @@ function updatePosition(): void {
 
   cursor.render();
   selection.render();
+  scrollbar.render();
 }
 
 function syncEditorFromModel(selection: SelectionState): void {
@@ -95,6 +148,7 @@ editor.addEventListener("scroll", () => {
   cursor.render();
   lineNumbers.syncScroll();
   selection.render();
+  scrollbar.render();
 });
 
 editor.addEventListener("keydown", (event) => {
@@ -122,4 +176,6 @@ editor.addEventListener("keydown", (event) => {
 
 view.render();
 lineNumbers.render();
+updateScrollBeyondLastLine();
+scrollbar.render();
 updatePosition();

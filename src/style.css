@@ -1,5 +1,6 @@
 :root {
   --editor-padding-top: 0px;
+  --editor-padding-bottom: 0px;
   --editor-padding-left: 64px;
   --editor-line-height: 22.4px;
 }
@@ -45,7 +46,8 @@ body {
   position: absolute;
   inset: 0;
 
-  padding: var(--editor-padding-top) 20px 0 var(--editor-padding-left);
+  padding: var(--editor-padding-top) 20px
+    var(--editor-padding-bottom) var(--editor-padding-left);
 
   font-family: monospace;
   font-size: 14px;
@@ -55,6 +57,12 @@ body {
   tab-size: 4;
 
   box-sizing: border-box;
+  scrollbar-width: none;
+}
+
+#editor::-webkit-scrollbar,
+#editor-view::-webkit-scrollbar {
+  display: none;
 }
 
 /* Visual layer */
@@ -160,8 +168,10 @@ body {
   width: 54px;
 
   padding-top: var(--editor-padding-top);
-  padding-bottom: 0px;
+  padding-bottom: var(--editor-padding-bottom);
   padding-right: 12px;
+  background: var(--seek-background);
+  z-index: 2;
 
   font-family: monospace;
   font-size: 14px;
@@ -182,4 +192,66 @@ body {
 
 .line-number.active-line-number {
   color: var(--seek-line-number-active-color);
+}
+
+/* Scrollbar */
+
+#scrollbar-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.editor-scrollbar-track {
+  position: absolute;
+  pointer-events: auto;
+  background: var(--seek-scrollbar-track);
+}
+
+.editor-scrollbar-track-vertical {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+}
+
+.has-horizontal-scrollbar .editor-scrollbar-track-vertical {
+  bottom: 14px;
+}
+
+.editor-scrollbar-track-horizontal {
+  right: 0;
+  bottom: 0;
+  left: var(--editor-padding-left);
+  height: 14px;
+}
+
+.has-vertical-scrollbar .editor-scrollbar-track-horizontal {
+  right: 14px;
+}
+
+.editor-scrollbar-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  border-radius: 0;
+  background: var(--seek-scrollbar-thumb);
+
+  cursor: default;
+  touch-action: none;
+}
+
+.editor-scrollbar-thumb-vertical {
+  right: 0;
+}
+
+.editor-scrollbar-thumb-horizontal {
+  bottom: 0;
+  height: 100%;
+}
+
+.editor-scrollbar-thumb:hover {
+  background: var(--seek-scrollbar-thumb-hover);
 }
